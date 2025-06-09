@@ -38,7 +38,6 @@ export async function registerCommands() {
   console.log("Commands registered successfully.");
 }
 
-// Call it immediately when you run `node dist/deploy-commands.js`
 registerCommands().catch((err) => {
   console.error("Failed to register commands:", err);
   process.exit(1);

@@ -4,10 +4,10 @@ import { DataTypes, Model } from "sequelize";
 
 class Mute extends Model {
   declare id: number;
-  declare user_id: string;
-  declare mod_id: string;
+  declare userId: string;
+  declare modId: string;
   declare reasons: string;
-  declare created_at: number;
+  declare createdAt: number;
 }
 
 Mute.init(
@@ -17,18 +17,18 @@ Mute.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    user_id: {
+    userId: {
       type: DataTypes.STRING(19),
       allowNull: false,
     },
-    mod_id: {
+    modId: {
       type: DataTypes.STRING(19),
       allowNull: false,
     },
     reasons: {
       type: DataTypes.STRING(100),
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.INTEGER,
     },
   },

@@ -4,8 +4,8 @@ import { DataTypes, Model } from "sequelize";
 
 class User extends Model {
   declare id: number;
-  declare warn_total: number;
-  declare mute_total: number;
+  declare warnTotal: number;
+  declare muteTotal: number;
 }
 
 User.init(
@@ -15,11 +15,11 @@ User.init(
       primaryKey: true,
       allowNull: false
     },
-    warn_total: {
+    warnTotal: {
       type: DataTypes.NUMBER,
       defaultValue: 0,
     },
-    mute_total: {
+    muteTotal: {
       type: DataTypes.NUMBER,
       defaultValue: 0,
     },

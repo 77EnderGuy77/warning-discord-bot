@@ -8,7 +8,7 @@ import {
 import { loadCommandsFrom, CommandModule } from "./utils/commandLoader";
 import dotenv from "dotenv";
 import { sequelize } from "./database";
-
+import { registerCommands } from "./deploy-commands";
 
 dotenv.config();
 
@@ -21,7 +21,6 @@ const client = new Client({
   ],
 });
 
-
 // Extend the Client interface to include commands
 client.commands = new Collection<string, CommandModule>();
 
@@ -30,9 +29,14 @@ loadCommandsFrom(client, __dirname + "/commands");
 
 client.once(Events.ClientReady, async () => {
   console.log(`✅ Logged in as ${client.user!.tag}!`);
-  
+
+  // await registerCommands().catch((err) => {
+  //   console.error("Failed to register commands:", err);
+  //   process.exit(1);
+  // });
+
   await sequelize.authenticate();
-  await sequelize.sync({alter: true})
+  await sequelize.sync({ force: true });
   console.log("✅ Database connection established.");
 });
 

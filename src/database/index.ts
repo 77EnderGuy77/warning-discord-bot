@@ -10,10 +10,10 @@ import User from "./models/users";
 import Warning from "./models/warnings";
 import Mute from "./models/mutes";
 
-User.hasMany(Warning, { foreignKey: "user_id", as: "warnings" });
-Warning.belongsTo(User, { foreignKey: "user_id", as: "user" });
+User.hasMany(Warning, { foreignKey: "userId", as: "warnings" });
+Warning.belongsTo(User, { foreignKey: "userId", as: "user" });
 
-User.hasMany(Mute, { foreignKey: "user_id", as: "mutes" });
-Mute.belongsTo(User, { foreignKey: "user_id", as: "user" });
+User.hasMany(Mute, { foreignKey: "userId", as: "mutes" });
+Mute.belongsTo(User, { foreignKey: "userId", as: "user" });
 
 export {sequelize};

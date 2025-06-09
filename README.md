@@ -8,7 +8,7 @@ A simple Discord moderation bot written in TypeScript using [`discord.js`](https
 - Persists data using SQLite via Sequelize models: `User`, `Warning` and `Mute`.
 - Slash command registration script for easy deployment.
 
-Commands such as `remove_warn` and `warn_list` are present in the codebase but are not yet implemented. Additional moderation commands may be added as the project evolves.
+Commands such as `remove-warn` and `warn-list` are present in the codebase but are not yet implemented. Additional moderation commands may be added as the project evolves.
 
 ## Setup
 

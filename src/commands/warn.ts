@@ -5,13 +5,13 @@ import {
 } from "discord.js";
 
 import { sequelize } from "../database";
-const { Warning, User, Mutes } = sequelize.models;
+const { Warning, User, Mute } = sequelize.models;
 
 export default {
   data: new SlashCommandBuilder()
     .setName("warn")
     .setDescription("Gives a warning to a user")
-    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers) // Requires Ban Members permission
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
     .addUserOption((option) =>
       option
         .setName("user")
@@ -47,35 +47,73 @@ export default {
         });
       }
 
-      // Check if the user is already warned
+      // ensure the user exists in the User table
       await User.findOrCreate({ where: { id: user.id } });
 
-      await Warning.create({
-        user_id: user.id,
-        mod_id: mod.id,
-        reason,
-        created_at: date,
+      // fetch existing warnings for this user
+      const existingWarns = await Warning.findAll({
+        where: { user_id: user.id },
       });
 
-      await User.increment("warn_total", {
-        by: 1,
-        where: { id: user.id },
-      });
+      if (existingWarns.length < 2) {
+        // fewer than 2 existing warns → just add one more warning
+        await Warning.create({
+          user_id: user.id,
+          mod_id: mod.id,
+          reason,
+          created_at: date,
+        });
 
-      await interaction.reply({
-        content: `✅ User ${user.username} has been warned by ${mod.username} at <t:${date}> for: ${reason}`,
-        flags: MessageFlags.Ephemeral,
-      });
-    } catch (error: any) {
-      if (interaction.replied) {
-        await interaction.editReply(`⚠ DB error: ${error}`);
-        console.error(error);
-      } else {
+        await User.increment("warn_total", {
+          by: 1,
+          where: { id: user.id },
+        });
+        
         await interaction.reply({
-          content: `⚠ DB error: ${error}`,
+          content: `✅ User ${user.username} has been warned by ${mod.username} at <t:${date}:F> for: ${reason}`,
           flags: MessageFlags.Ephemeral,
         });
-        console.error(error);
+      } else {
+        // this will be the 3rd warning → combine all reasons into a mute
+        const allReasons = [
+          ...existingWarns.map((w: { reason: string; }) => w.reason),
+          reason,
+        ].join(" | ");
+
+        await Mute.create({
+          user_id: user.id,
+          mod_id: mod.id,
+          reasons: allReasons,
+          created_at: date,
+        });
+
+        // remove the 2 existing warnings
+        await Warning.destroy({ where: { user_id: user.id } });
+
+        // reset warn_total to 0 and increment mute_total by 1
+        await User.update(
+          { warn_total: 0 },
+          { where: { id: user.id } }
+        );
+        await User.increment("mute_total", {
+          by: 1,
+          where: { id: user.id },
+        });
+
+        await interaction.reply({
+          content: `🔇 User ${user.username} needs to been muted by ${mod.username} at <t:${date}:F>. Reasons: ${allReasons}`,
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    } catch (error: any) {
+      console.error(error);
+      if (interaction.replied) {
+        await interaction.editReply(`⚠️ DB error: ${error}`);
+      } else {
+        await interaction.reply({
+          content: `⚠️ DB error: ${error}`,
+          flags: MessageFlags.Ephemeral,
+        });
       }
     }
   },
