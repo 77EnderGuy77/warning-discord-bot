@@ -1,19 +1,38 @@
-const { Sequelize } = require("sequelize");
+import { Sequelize } from "sequelize";
 
-const sequelize = new Sequelize({
+export const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: "./data/database.sqlite",
-  logging: false
+  storage:
+    process.env.NODE_ENV === "test" ? ":memory:" : "./data/database.sqlite",
+  logging: false,
 });
 
-import User from "./models/users";
-import Warning from "./models/warnings";
-import Mute from "./models/mutes";
+import Infractions from "./models/infractions";
+import Warns from "./models/warns";
+import Mutes from "./models/mutes";
 
-User.hasMany(Warning, { foreignKey: "userId", as: "warnings" });
-Warning.belongsTo(User, { foreignKey: "userId", as: "user" });
+Warns.hasMany(Infractions, {
+  foreignKey: "infractionID",
+  constraints: false,
+  onDelete: "CASCADE",
+  scope: { type: "warn" },
+});
 
-User.hasMany(Mute, { foreignKey: "userId", as: "mutes" });
-Mute.belongsTo(User, { foreignKey: "userId", as: "user" });
+Infractions.belongsTo(Warns, {
+  foreignKey: "infractionID",
+  constraints: false,
+});
 
-export {sequelize};
+Mutes.hasMany(Infractions, {
+  foreignKey: "infractionID",
+  constraints: false,
+  onDelete: "CASCADE",
+  scope: { type: "mute" },
+});
+
+Infractions.belongsTo(Mutes, {
+  foreignKey: "infractionID",
+  constraints: false,
+});
+
+export { Infractions, Warns, Mutes };

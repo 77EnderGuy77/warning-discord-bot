@@ -22,18 +22,32 @@ export function loadCommandsFrom(
     return;
   }
 
-  const files = fs.readdirSync(commandsFolder).filter((f) => f.endsWith(".js"));
+  const files = fs
+    .readdirSync(commandsFolder)
+    .filter((f) => f.endsWith(".js") || f.endsWith(".ts"));
 
   for (const file of files) {
     const fullPath = path.join(commandsFolder, file);
+
+    // Clear require cache to ensure fresh reload
+    delete require.cache[require.resolve(fullPath)];
+
     const imported = require(fullPath);
     const command: CommandModule = imported.default ?? imported;
 
-    if ("data" in command && "execute" in command) {
-      client.commands.set(command.data.name, command);
-      console.log(`Loaded command module: ${command.data.name}`);
+    if (
+      command &&
+      typeof command === "object" &&
+      "data" in command &&
+      "execute" in command
+    ) {
+      const name = (command.data as SlashCommandBuilder).name;
+      client.commands.set(name, command);
+      console.log(`Loaded command module: ${name}`);
     } else {
       console.warn(`Skipping ${file}: missing .data or .execute`);
     }
   }
+
+  console.log(`Total commands loaded: ${client.commands.size}`);
 }

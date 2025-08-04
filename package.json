@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "register": "node dist/deploy-commands.js"
+    "register": "node dist/deploy-commands.js",
+    "fakeusers": "node dist/database/fakeUsers.js 100",
+    "delete": "node dist/load_one.js"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +24,6 @@
     "@types/node": "^22.15.21",
     "@types/sequelize": "^4.28.20",
     "@types/sqlite3": "^3.1.11",
-    "node-gyp": "^11.2.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

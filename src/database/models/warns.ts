@@ -2,13 +2,13 @@ import { sequelize } from "../index";
 
 import { DataTypes, Model, InferAttributes, InferCreationAttributes  } from "sequelize";
 
-class Mutes extends Model<InferAttributes<Mutes>, InferCreationAttributes<Mutes, { omit: 'id' }>>{
+class Warns extends Model<InferAttributes<Warns>, InferCreationAttributes<Warns, { omit: 'id' }>> {
   declare id: number;
   declare reasons: string;
   declare createdAt: string;
 }
 
-Mutes.init(
+Warns.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,7 +18,7 @@ Mutes.init(
     reasons: {
       type: DataTypes.TEXT,
       validate: {
-        max: 500,
+        max: 100,
       },
       allowNull: false,
     },
@@ -30,7 +30,7 @@ Mutes.init(
       }
     },
   },
-  { sequelize, tableName: "mutes", timestamps: false }
+  { sequelize, tableName: "warnings", timestamps: false }
 );
 
-export default Mutes;
+export default Warns;

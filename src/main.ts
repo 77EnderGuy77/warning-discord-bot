@@ -4,11 +4,13 @@ import {
   GatewayIntentBits,
   CommandInteraction,
   Collection,
+  MessageFlags,
 } from "discord.js";
 import { loadCommandsFrom, CommandModule } from "./utils/commandLoader";
 import dotenv from "dotenv";
 import { sequelize } from "./database";
 import { registerCommands } from "./deploy-commands";
+import handleButton from "./events/interactionbutton";
 
 dotenv.config();
 
@@ -30,13 +32,7 @@ loadCommandsFrom(client, __dirname + "/commands");
 client.once(Events.ClientReady, async () => {
   console.log(`✅ Logged in as ${client.user!.tag}!`);
 
-  // await registerCommands().catch((err) => {
-  //   console.error("Failed to register commands:", err);
-  //   process.exit(1);
-  // });
-
   await sequelize.authenticate();
-  await sequelize.sync({ force: true });
   console.log("✅ Database connection established.");
 });
 
@@ -53,8 +49,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
     console.error(`Error executing ${interaction.commandName}:`, err);
     await interaction.reply({
       content: "❌ There was an error while executing this command.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
+  }
+});
+
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isButton()){
+    await handleButton(interaction)
   }
 });
 

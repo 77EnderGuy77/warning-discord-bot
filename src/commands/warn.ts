@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 
 import { sequelize } from "../database";
-const { Warning, User, Mute } = sequelize.models;
+const { Infractions, Warns, Mutes } = sequelize.models;
 
 export default {
   data: new SlashCommandBuilder()
@@ -27,11 +27,24 @@ export default {
     ),
 
   async execute(interaction: any) {
+    await sequelize.sync();
+
     if (!interaction.guild) {
-      return interaction.reply({
+      await interaction.reply({
         content: "❌ This command can only be used in a server.",
         flags: MessageFlags.Ephemeral,
+        withResponse: true,
       });
+
+      setTimeout(async () => {
+        try {
+          await interaction.deleteReply();
+        } catch (err) {
+          console.error("Failed to delete ephemeral reply:", err);
+        }
+      }, 10 * 1000);
+
+      return;
     }
 
     try {
@@ -41,69 +54,133 @@ export default {
       const reason = interaction.options.getString("reason")!;
 
       if (user.id === mod.id) {
-        return interaction.reply({
+        await interaction.reply({
           content: "❌ You cannot warn yourself.",
           flags: MessageFlags.Ephemeral,
+          fetchReply: true,
         });
+
+        setTimeout(async () => {
+          try {
+            await interaction.deleteReply();
+          } catch (err) {
+            console.error("Failed to delete ephemeral reply:", err);
+          }
+        }, 10 * 1000);
+
+        return;
       }
 
-      // ensure the user exists in the User table
-      await User.findOrCreate({ where: { id: user.id } });
-
-      // fetch existing warnings for this user
-      const existingWarns = await Warning.findAll({
-        where: { user_id: user.id },
+      const warnCount = await Infractions.findAndCountAll({
+        where: { userID: user.id, type: "warn" },
       });
 
-      if (existingWarns.length < 2) {
-        // fewer than 2 existing warns → just add one more warning
-        await Warning.create({
-          user_id: user.id,
-          mod_id: mod.id,
-          reason,
-          created_at: date,
+      if (warnCount.count < 2) {
+        const warn = await Warns.create({ reasons: reason, createdAt: date });
+
+        await Infractions.create({
+          infractionID: warn.getDataValue("id"),
+          userID: user.id,
+          modID: mod.id,
+          type: "warn",
         });
 
-        await User.increment("warn_total", {
-          by: 1,
-          where: { id: user.id },
-        });
+        if (interaction.replied && warnCount.count + 1 < 2) {
+          await interaction.editReply(
+            `<@${user.id}> was muted for ${warnCount.count} time/s`
+          );
+
+          setTimeout(async () => {
+            try {
+              await interaction.deleteReply();
+            } catch (err) {
+              console.error("Failed to delete ephemeral reply:", err);
+            }
+          }, 60 * 1000);
+        } else {
+          await interaction.reply({
+            content: `<@${user.id}> was muted for ${
+              warnCount.count + 1
+            }  time/s`,
+            flags: MessageFlags.Ephemeral,
+            withResponse: true,
+          });
+
+          setTimeout(async () => {
+            try {
+              await interaction.deleteReply();
+            } catch (err) {
+              console.error("Failed to delete ephemeral reply:", err);
+            }
+          }, 10 * 1000);
+        }
         
-        await interaction.reply({
-          content: `✅ User ${user.username} has been warned by ${mod.username} at <t:${date}:F> for: ${reason}`,
-          flags: MessageFlags.Ephemeral,
-        });
+        console.log(`${user.displayName} was warnned by ${mod.displayName}`)
       } else {
-        // this will be the 3rd warning → combine all reasons into a mute
-        const allReasons = [
-          ...existingWarns.map((w: { reason: string; }) => w.reason),
+        const warnInfractions = await Infractions.findAll({
+          where: { userID: user.id, type: "warn" },
+          attributes: ["infractionID"],
+        });
+
+        const warnIds = warnInfractions.map((inf: any) => inf.infractionID);
+
+        const warns = await Warns.findAll({
+          where: { id: warnIds },
+          attributes: ["reasons"],
+        });
+
+        const reasons = [
+          ...warns.map((warn: any) => warn.reasons),
           reason,
         ].join(" | ");
 
-        await Mute.create({
-          user_id: user.id,
-          mod_id: mod.id,
-          reasons: allReasons,
-          created_at: date,
+        const mute = await Mutes.create({ reasons, createdAt: date });
+
+        await Infractions.create({
+          infractionID: mute.getDataValue("id"),
+          userID: user.id,
+          modID: mod.id,
+          type: "mute",
         });
 
-        // remove the 2 existing warnings
-        await Warning.destroy({ where: { user_id: user.id } });
-
-        // reset warn_total to 0 and increment mute_total by 1
-        await User.update(
-          { warn_total: 0 },
-          { where: { id: user.id } }
-        );
-        await User.increment("mute_total", {
-          by: 1,
-          where: { id: user.id },
+        const muteCount = await Infractions.findAndCountAll({
+          where: { userID: user.id, type: "mute" },
         });
 
-        await interaction.reply({
-          content: `🔇 User ${user.username} needs to been muted by ${mod.username} at <t:${date}:F>. Reasons: ${allReasons}`,
-          flags: MessageFlags.Ephemeral,
+        const modChatID = "1309290018707341414";
+
+        const channel = interaction.client.channels.cache.get(modChatID);
+
+        const warnRows = await Infractions.findAll({
+          where: { userID: user.id, type: "warn" },
+          attributes: ["infractionID"],
         });
+        const warningIds = warnRows.map((r: any) => r.infractionID);
+
+        await Warns.destroy({
+          where: { id: warningIds },
+          force: true,
+        });
+
+        if (channel?.isTextBased()) {
+          channel.send(
+            `<@${user.id}> has 3 warns. Now They need to be Muted. Total number of Mutes: ${muteCount.count}`
+          );
+        } else {
+          console.warn(
+            `Mod-log channel ${modChatID} not found or not text-based`
+          );
+        }
+
+        // send a *public* confirmation in the command channel
+        if (!interaction.replied) {
+          await interaction.reply({
+            content: `<@${user.id}> has reached 3 warnings and has been muted. Total mutes: ${muteCount.count}`,
+            flags: MessageFlags.Ephemeral, // ← omit ephemeral flag so it’s visible
+          });
+        }
+        
+        console.log(`${user.displayName} needs to be muted by ${mod.displayName}`)
       }
     } catch (error: any) {
       console.error(error);
@@ -113,7 +190,16 @@ export default {
         await interaction.reply({
           content: `⚠️ DB error: ${error}`,
           flags: MessageFlags.Ephemeral,
+          withResponse: true,
         });
+
+        setTimeout(async () => {
+          try {
+            await interaction.deleteReply();
+          } catch (err) {
+            console.error("Failed to delete ephemeral reply:", err);
+          }
+        }, 10 * 1000);
       }
     }
   },
