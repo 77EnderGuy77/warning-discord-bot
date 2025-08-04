@@ -1,55 +1,64 @@
 # Warning Discord Bot
 
-A simple Discord moderation bot written in TypeScript using [`discord.js`](https://discord.js.org/) and [`sequelize`](https://sequelize.org/). The bot provides a `/warn` command that allows moderators to keep track of user warnings in a SQLite database.
+A Discord moderation bot built with TypeScript, [`discord.js`](https://discord.js.org/), and [`sequelize`](https://sequelize.org/). It tracks user warnings and mutes in a SQLite database, offering interactive moderation commands.
 
 ## Features
 
-- `/warn` &ndash; give a user a warning with a reason (stored in the database).
-- Persists data using SQLite via Sequelize models: `User`, `Warning` and `Mute`.
-- Slash command registration script for easy deployment.
-
-Commands such as `remove-warn` and `warn-list` are present in the codebase but are not yet implemented. Additional moderation commands may be added as the project evolves.
+- **Warn users:** `/warn` issues a warning with a reason. After 3 warnings, mods will be notified to mute user and their warnings are bundled.
+- **View infractions:** `/warn-list` displays all warnings and mutes, with user filtering (in works), interactive pagination, and detailed reports.
+- **Interactive moderation:** Paginate infractions and view full reports using buttons.
+- **Persistent storage:** Uses SQLite via Sequelize models: `Infractions`, `Warns`, and `Mutes`.
+- **Easy deployment:** Slash command registration script.
+- **Database seeding:** Generate fake users and infractions ([src/database/fakeUsers.ts](src/database/fakeUsers.ts)).
+- **Command management:** Delete commands ([src/deleteOneCommand.ts](src/deleteOneCommand.ts)).
 
 ## Setup
 
 1. **Install dependencies**
-
    ```bash
    npm install
    ```
 
-2. **Create an environment file**
-
-   Copy `.env.example` to `.env` and fill in the required variables:
-
-   - `DISCORD_TOKEN` – your bot token from the Discord Developer Portal.
-   - `CLIENT_ID` – the application client ID.
-   - `GUILD_ID` – the guild ID to register slash commands in.
+2. **Configure environment**
+   Copy `.env.example` to `.env` and set:
+   - `DISCORD_TOKEN` – Bot token from Discord Developer Portal
+   - `CLIENT_ID` – Application client ID
+   - `GUILD_ID` – Guild ID for slash command registration
 
 3. **Build the project**
-
    ```bash
    npm run build
    ```
 
-4. **Register slash commands** (run after every build when commands change)
-
+4. **Register slash commands**  
+   Run after each build if commands change:
    ```bash
    npm run register
    ```
 
-5. **Start the bot**
+   Or use [build.bat](build.bat) to combine build and registration:
+   ```cli
+   ./build
+   ```
 
+5. **Start the bot**
    ```bash
    npm start
    ```
 
-The compiled files will be placed in the `dist/` directory and the bot will connect to Discord using the token provided in your `.env` file.
-
 ## Development
 
-The TypeScript source lives in the `src/` folder. Database files are created under `data/` (ignored by Git). You can adjust the Sequelize configuration in `src/database/index.ts` if you wish to use a different database.
+- **Source:** [`src/`](src/)
+- **Database:** SQLite file at [`data/database.sqlite`](data/database.sqlite)
+- **Sequelize config:** [`src/database/index.ts`](src/database/index.ts)
+- **Commands:** [`src/commands/`](src/commands/)
+- **Interaction events:** [`src/events/interactionbutton.ts`](src/events/interactionbutton.ts)
+
+## Plans
+- [ ] Create a form to modify every changeable part of the database and bot's logging
+- [ ] Optimize code for faster changes
+- [ ] Add function annotations
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Licensed under the MIT License. See [LICENSE](LICENSE) for details.
