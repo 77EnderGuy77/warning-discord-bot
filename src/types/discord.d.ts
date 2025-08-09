@@ -1,4 +1,3 @@
-// src/types/discord.d.ts
 import { Collection, SlashCommandBuilder, CommandInteraction, Client as BaseClient } from "discord.js";
 
 type CommandModule = {

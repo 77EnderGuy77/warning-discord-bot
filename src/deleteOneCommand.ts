@@ -2,7 +2,7 @@ import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const token    = process.env.DISCORD_TOKEN!;
+const token = process.env.DISCORD_TOKEN!;
 const clientId = process.env.CLIENT_ID!;
 
 if (!token) {
@@ -12,7 +12,7 @@ if (!clientId) {
   throw new Error('⚠️ CLIENT_ID is not set. Add it to your .env');
 }
 
-const guildId  = process.env.GUILD_ID!;
+const guildId = process.env.TEST_GUILD_ID!;
 
 const rest = new REST({ version: '10' }).setToken(token);
 
@@ -23,7 +23,7 @@ async function deleteSlashCommand(commandName: string) {
     : await rest.get(Routes.applicationCommands(clientId));
 
   const list = commands as Array<{ id: string; name: string }>;
-  const cmd  = list.find(c => c.name === commandName);
+  const cmd = list.find(c => c.name === commandName);
 
   if (!cmd) {
     console.log(`❌ Command "${commandName}" not found.`);

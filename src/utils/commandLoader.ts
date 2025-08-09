@@ -1,4 +1,3 @@
-// utils/commandLoader.ts
 import {
   Client,
   Collection,

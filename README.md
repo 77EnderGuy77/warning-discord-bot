@@ -3,9 +3,9 @@
 A Discord moderation bot built with TypeScript, [`discord.js`](https://discord.js.org/), and [`sequelize`](https://sequelize.org/). It tracks user warnings and mutes in a SQLite database, offering interactive moderation commands.
 
 ## Features
-
-- **Warn users:** `/warn` issues a warning with a reason. After 3 warnings, mods will be notified to mute user and their warnings are bundled.
-- **View infractions:** `/warn-list` displays all warnings and mutes, with user filtering (in works), interactive pagination, and detailed reports.
+- **Setup the bot:** `/setup` is used to setup 3 main settings: Moderation Channel, Number of warnings before mute and color of side line on embed, using Modal and ChannelMenuSelect. User can not use `/warn` nor `/warn-list` until `/setup` is finished.
+- **Warn users:** `/warn` issues a warning with a reason. After selected number of warnings, mods will be notified to mute user and their warnings are bundled.
+- **View infractions:** `/warn-list` displays all warnings and mutes, with user filtering, interactive pagination, and detailed reports.
 - **Interactive moderation:** Paginate infractions and view full reports using buttons.
 - **Persistent storage:** Uses SQLite via Sequelize models: `Infractions`, `Warns`, and `Mutes`.
 - **Easy deployment:** Slash command registration script.
@@ -55,7 +55,7 @@ A Discord moderation bot built with TypeScript, [`discord.js`](https://discord.j
 - **Interaction events:** [`src/events/interactionbutton.ts`](src/events/interactionbutton.ts)
 
 ## Plans
-- [ ] Create a form to modify every changeable part of the database and bot's logging
+- [x] Create a form to modify every changeable part of the database and bot's logging
 - [ ] Optimize code for faster changes
 - [ ] Add function annotations
 

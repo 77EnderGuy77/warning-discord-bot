@@ -7,9 +7,8 @@ dotenv.config();
 
 const token = process.env.DISCORD_TOKEN!;
 const clientId = process.env.CLIENT_ID!;
-const guildId = process.env.GUILD_ID!;
 
-export async function registerCommands() {
+export async function registerCommands(guildId: string) {
   const commandsPath = path.join(__dirname, "commands");
   const commandFiles = fs
     .readdirSync(commandsPath)
@@ -19,9 +18,9 @@ export async function registerCommands() {
 
   for (const file of commandFiles) {
     const filePath = path.join(commandsPath, file);
-
     const imported = require(filePath);
     const command = imported.default ?? imported;
+
     if (!command.data) {
       console.warn(`Skipping ${file} (no .data export).`);
       continue;
@@ -31,14 +30,20 @@ export async function registerCommands() {
 
   const rest = new REST({ version: "10" }).setToken(token);
 
-  console.log("Refreshing application commands...");
-  await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-    body: commands,
-  });
-  console.log("Commands registered successfully.");
-}
+  console.log(`Refreshing application commands for guild ${guildId}...`);
+  
+  try {
+    await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+      body: commands,
+    });
+    console.log(`✅ Commands registered for guild ${guildId}`);
+  } catch (error: any) {
+    if (error.status === 403) {
+      console.warn(`⚠️ Skipping guild ${guildId} — Forbidden (403)`);
+      return;
+    }
+    console.error(`❌ Failed to register commands for guild ${guildId}`, error);
+  }
 
-registerCommands().catch((err) => {
-  console.error("Failed to register commands:", err);
-  process.exit(1);
-});
+  console.log("Command registration process finished.\n");
+}

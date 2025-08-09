@@ -5,6 +5,16 @@ IF NOT EXIST ".env" (
     exit /B 1
 )
 
+set "distFolder=%~dp0dist"
+
+IF EXIST "%distFolder%" (
+    rmdir /S /Q "%distFolder%"
+    echo Folder has been deleted: %distFolder%
+)
+
+echo Starting to rebuild
+
 call npm run build
-call npm run register
+
+echo Building is finished
 pause

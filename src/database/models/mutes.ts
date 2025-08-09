@@ -1,36 +1,36 @@
-import { sequelize } from "../index";
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, Sequelize } from "sequelize";
 
-import { DataTypes, Model, InferAttributes, InferCreationAttributes  } from "sequelize";
-
-class Mutes extends Model<InferAttributes<Mutes>, InferCreationAttributes<Mutes, { omit: 'id' }>>{
+class Mutes extends Model<InferAttributes<Mutes>, InferCreationAttributes<Mutes, { omit: 'id' }>> {
   declare id: number;
   declare reasons: string;
-  declare createdAt: string;
-}
+  declare createdAt: number;
 
-Mutes.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    reasons: {
-      type: DataTypes.TEXT,
-      validate: {
-        max: 500,
+  static initModel(sequelize: Sequelize) {
+    Mutes.init(
+      {
+        id: {
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true,
+        },
+        reasons: {
+          type: DataTypes.TEXT,
+          validate: {
+            max: 500,
+          },
+          allowNull: false,
+        },
+        createdAt: {
+          type: DataTypes.INTEGER,
+          allowNull: false,
+          validate: {
+            is: /^[0-9]{10}$/
+          }
+        },
       },
-      allowNull: false,
-    },
-    createdAt: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: {
-        is: /^[0-9]{10}$/
-      }
-    },
-  },
-  { sequelize, tableName: "mutes", timestamps: false }
-);
+      { sequelize, tableName: "mutes", timestamps: false }
+    );
+  }
+}
 
 export default Mutes;

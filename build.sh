@@ -11,9 +11,11 @@ if [ ! -f "./.env" ]; then
   exit 1
 fi
 
-# Run your npm commands
+echo Starting to rebuild
+
 call npm run build
-call npm run register
+
+echo Building is finished
 
 # Pause at the end
 read -n 1 -s -r -p "Press any key to exit..."

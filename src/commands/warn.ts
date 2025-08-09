@@ -1,11 +1,12 @@
 import {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  MessageFlags,
+  MessageFlags
 } from "discord.js";
-
-import { sequelize } from "../database";
-const { Infractions, Warns, Mutes } = sequelize.models;
+import { getModels } from "../database/guildDatabaseManager";
+import { getCfgField } from "../utils/config";
+import { editTempEphemeral, sendTempEphemeral } from "../utils/tempEphem";
+import { ensureGuildConfigExists } from "../utils/configExist";
 
 export default {
   data: new SlashCommandBuilder()
@@ -27,47 +28,33 @@ export default {
     ),
 
   async execute(interaction: any) {
-    await sequelize.sync();
-
     if (!interaction.guild) {
-      await interaction.reply({
-        content: "❌ This command can only be used in a server.",
-        flags: MessageFlags.Ephemeral,
-        withResponse: true,
-      });
+      return await sendTempEphemeral(interaction, "❌ This command can only be used in a server.", 10);
+    }
 
-      setTimeout(async () => {
-        try {
-          await interaction.deleteReply();
-        } catch (err) {
-          console.error("Failed to delete ephemeral reply:", err);
-        }
-      }, 10 * 1000);
-
-      return;
+    if(!ensureGuildConfigExists(interaction.guild!.id)){
+      return await sendTempEphemeral(interaction, "⚠️ Bot not configured yet. Please run `/setup` first.", 20)
     }
 
     try {
+      const { Infractions, Warns, Mutes } = getModels(interaction.guild.id)
+
+      const rawNumWarn = await getCfgField(interaction.guild!.id, "numWarns")
+
+      var numWarn: number
+      if (typeof rawNumWarn == "number") {
+        numWarn = rawNumWarn
+      } else {
+        numWarn = (rawNumWarn as unknown) as number
+      }
+
       const user = interaction.options.getUser("user")!;
       const mod = interaction.user;
       const date = Math.floor(Date.now() / 1000);
       const reason = interaction.options.getString("reason")!;
 
       if (user.id === mod.id) {
-        await interaction.reply({
-          content: "❌ You cannot warn yourself.",
-          flags: MessageFlags.Ephemeral,
-          fetchReply: true,
-        });
-
-        setTimeout(async () => {
-          try {
-            await interaction.deleteReply();
-          } catch (err) {
-            console.error("Failed to delete ephemeral reply:", err);
-          }
-        }, 10 * 1000);
-
+        await sendTempEphemeral(interaction, "You can't warn yourself", 10)
         return;
       }
 
@@ -75,7 +62,7 @@ export default {
         where: { userID: user.id, type: "warn" },
       });
 
-      if (warnCount.count < 2) {
+      if (warnCount.count < (numWarn - 1)) {
         const warn = await Warns.create({ reasons: reason, createdAt: date });
 
         await Infractions.create({
@@ -86,37 +73,18 @@ export default {
         });
 
         if (interaction.replied && warnCount.count + 1 < 2) {
-          await interaction.editReply(
-            `<@${user.id}> was muted for ${warnCount.count} time/s`
-          );
-
-          setTimeout(async () => {
-            try {
-              await interaction.deleteReply();
-            } catch (err) {
-              console.error("Failed to delete ephemeral reply:", err);
-            }
-          }, 60 * 1000);
+          await editTempEphemeral(interaction,
+            `<@${user.id}> was warned for ${warnCount.count} time/s`);
         } else {
-          await interaction.reply({
-            content: `<@${user.id}> was muted for ${
-              warnCount.count + 1
-            }  time/s`,
-            flags: MessageFlags.Ephemeral,
-            withResponse: true,
-          });
-
-          setTimeout(async () => {
-            try {
-              await interaction.deleteReply();
-            } catch (err) {
-              console.error("Failed to delete ephemeral reply:", err);
-            }
-          }, 10 * 1000);
+          await sendTempEphemeral(interaction,
+            `<@${user.id}> was warned for ${warnCount.count + 1} time/s`,
+            10)
         }
-        
+
         console.log(`${user.displayName} was warnned by ${mod.displayName}`)
       } else {
+
+        
         const warnInfractions = await Infractions.findAll({
           where: { userID: user.id, type: "warn" },
           attributes: ["infractionID"],
@@ -147,7 +115,7 @@ export default {
           where: { userID: user.id, type: "mute" },
         });
 
-        const modChatID = "1309290018707341414";
+        const modChatID = await getCfgField(interaction.guild!.id, "modChannelId");
 
         const channel = interaction.client.channels.cache.get(modChatID);
 
@@ -164,7 +132,7 @@ export default {
 
         if (channel?.isTextBased()) {
           channel.send(
-            `<@${user.id}> has 3 warns. Now They need to be Muted. Total number of Mutes: ${muteCount.count}`
+            `<@${user.id}> has ${numWarn} warns. Now They need to be Muted. Total number of Mutes: ${muteCount.count}`
           );
         } else {
           console.warn(
@@ -172,34 +140,20 @@ export default {
           );
         }
 
-        // send a *public* confirmation in the command channel
         if (!interaction.replied) {
-          await interaction.reply({
-            content: `<@${user.id}> has reached 3 warnings and has been muted. Total mutes: ${muteCount.count}`,
-            flags: MessageFlags.Ephemeral, // ← omit ephemeral flag so it’s visible
-          });
+          await sendTempEphemeral(interaction,
+            `<@${user.id}> has reached 3 warnings and has been muted. Total mutes: ${muteCount.count}`,
+            10)
         }
-        
+
         console.log(`${user.displayName} needs to be muted by ${mod.displayName}`)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
       if (interaction.replied) {
-        await interaction.editReply(`⚠️ DB error: ${error}`);
+        await editTempEphemeral(interaction, `⚠️ DB error: ${error}`)
       } else {
-        await interaction.reply({
-          content: `⚠️ DB error: ${error}`,
-          flags: MessageFlags.Ephemeral,
-          withResponse: true,
-        });
-
-        setTimeout(async () => {
-          try {
-            await interaction.deleteReply();
-          } catch (err) {
-            console.error("Failed to delete ephemeral reply:", err);
-          }
-        }, 10 * 1000);
+        await sendTempEphemeral(interaction, `⚠️ DB error: ${error}`, 10)
       }
     }
   },

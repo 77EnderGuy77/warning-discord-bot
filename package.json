@@ -6,9 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "register": "node dist/deploy-commands.js",
-    "fakeusers": "node dist/database/fakeUsers.js 100",
-    "delete": "node dist/load_one.js"
+    "fakeusers": "node dist/database/fakeUsers.js 1349790452517437440 100",
+    "delete": "node dist/deleteOneCommand.js"
   },
   "keywords": [],
   "author": "",
@@ -17,10 +16,13 @@
   "dependencies": {
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
+    "js-yaml": "^4.1.0",
     "sequelize": "^6.37.7",
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.15.21",
     "@types/sequelize": "^4.28.20",
     "@types/sqlite3": "^3.1.11",
