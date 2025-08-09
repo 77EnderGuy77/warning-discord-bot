@@ -9,8 +9,8 @@ A Discord moderation bot built with TypeScript, [`discord.js`](https://discord.j
 - **Interactive moderation:** Paginate infractions and view full reports using buttons.
 - **Persistent storage:** Uses SQLite via Sequelize models: `Infractions`, `Warns`, and `Mutes`.
 - **Easy deployment:** Slash command registration script.
-- **Database seeding:** Generate fake users and infractions ([src/database/fakeUsers.ts](src/database/fakeUsers.ts)).
-- **Command management:** Delete commands ([src/deleteOneCommand.ts](src/deleteOneCommand.ts)).
+- **Database seeding:** Generate fake users and infractions for testing `/warn-list` ([src/database/fakeUsers.ts](src/database/fakeUsers.ts)).
+- **Command management:** Delete single command ([src/deleteOneCommand.ts](src/deleteOneCommand.ts)).
 
 ## Setup
 
@@ -21,9 +21,8 @@ A Discord moderation bot built with TypeScript, [`discord.js`](https://discord.j
 
 2. **Configure environment**
    Copy `.env.example` to `.env` and set:
-   - `DISCORD_TOKEN` – Bot token from Discord Developer Portal
+   - `DISCORD_TOKEN` – Bot token from [Discord Developer Portal](https://discord.com/developers/applications)
    - `CLIENT_ID` – Application client ID
-   - `GUILD_ID` – Guild ID for slash command registration
 
 3. **Build the project**
    ```bash
@@ -49,8 +48,8 @@ A Discord moderation bot built with TypeScript, [`discord.js`](https://discord.j
 ## Development
 
 - **Source:** [`src/`](src/)
-- **Database:** SQLite file at [`data/database.sqlite`](data/database.sqlite)
-- **Sequelize config:** [`src/database/index.ts`](src/database/index.ts)
+- **Database:** SQLite file at [`data/database.sqlite`](data/database.sqlite) (will be created after first bot start)
+- **Sequelize config:** [`src/database/guildDatabaseManager.ts`](src/database/guildDatabaseManager.ts)
 - **Commands:** [`src/commands/`](src/commands/)
 - **Interaction events:** [`src/events/interactionbutton.ts`](src/events/interactionbutton.ts)
 
